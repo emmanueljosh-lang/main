@@ -146,9 +146,15 @@ export default async function handler(request, response) {
       return;
     }
 
+    const referer = request.headers.referer || 'https://emmanuel-josh-portfolio.vercel.app/';
+
     const fsResponse = await fetch(FORM_SUBMIT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'Referer': referer
+      },
       body: JSON.stringify({
         name,
         email,
