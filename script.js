@@ -1,6 +1,6 @@
-const form = document.getElementById('contact-form');
-const FORM_SUBMIT_ENDPOINT = '/api/send-email';
-const statusMessage = document.getElementById('form-status');
+/* ──────────────────────────────────────────────
+   Global DOM refs & utilities
+   ────────────────────────────────────────────── */
 const year = document.getElementById('year');
 const philTimeDisplay = document.getElementById('phil-time');
 const navToggle = document.querySelector('.nav-toggle');
@@ -30,6 +30,9 @@ function updatePhilippineTime() {
 updatePhilippineTime();
 setInterval(updatePhilippineTime, 1000);
 
+/* ──────────────────────────────────────────────
+   Interactive element touch/click feedback
+   ────────────────────────────────────────────── */
 const interactiveElements = document.querySelectorAll('.card, .btn, .site-nav a');
 interactiveElements.forEach((element) => {
   const activate = () => element.classList.add('is-active');
@@ -43,6 +46,9 @@ interactiveElements.forEach((element) => {
   element.addEventListener('mouseleave', deactivate);
 });
 
+/* ──────────────────────────────────────────────
+   Mobile navigation
+   ────────────────────────────────────────────── */
 function handleNavKeydown(event) {
   if (event.key === 'Escape') {
     setNavOpen(false);
@@ -103,6 +109,9 @@ if (navToggle && siteNav) {
   });
 }
 
+/* ──────────────────────────────────────────────
+   Flip cards (touch devices)
+   ────────────────────────────────────────────── */
 document.querySelectorAll('.flip-card').forEach((card) => {
   card.addEventListener('click', (event) => {
     if (event.target.closest('a, button, input, textarea, select')) {
@@ -118,137 +127,75 @@ document.querySelectorAll('.flip-card').forEach((card) => {
   });
 });
 
-if (navToggle && siteNav) {
-  navToggle.addEventListener('click', () => {
-    const isOpen = navToggle.getAttribute('aria-expanded') === 'true';
-    setNavOpen(!isOpen);
-  });
+/* ──────────────────────────────────────────────
+   Contact form — Resend API via /api/send-email
+   ────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('contact-form');
+  const statusEl = document.getElementById('form-status');
+  const successEl = document.getElementById('contact-success');
+  const replyToField = document.getElementById('replyto-field');
 
-  siteNav.querySelectorAll('a').forEach((link) => {
-    link.addEventListener('click', () => setNavOpen(false));
-  });
-
-  const backdrop = document.querySelector('.nav-backdrop');
-  backdrop?.addEventListener('click', () => setNavOpen(false));
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      setNavOpen(false);
-    }
-  });
-
-  window.addEventListener('resize', () => {
-    if (window.innerWidth > 720) {
-      setNavOpen(false);
-    }
-  });
-}
-
-const replyToField = document.getElementById('replyto-field');
-const emailField = document.querySelector('#contact-form input[name="email"]');
-const successDetails = document.getElementById('contact-success');
-const submitButton = document.querySelector('#contact-form button[type="submit"]');
-
-const showSuccessDetails = (name, email, message) => {
-  if (!successDetails) return;
-
-  successDetails.innerHTML = `
-    <p class="success-heading">Message sent successfully!</p>
-    <dl>
-      <dt>Name</dt>
-      <dd>${name}</dd>
-      <dt>Email</dt>
-      <dd>${email}</dd>
-      <dt>Message</dt>
-      <dd>${message}</dd>
-    </dl>
-  `;
-  successDetails.hidden = false;
-};
-
-const hideSuccessDetails = () => {
-  if (!successDetails) return;
-  successDetails.hidden = true;
-  successDetails.innerHTML = '';
-};
-
-if (replyToField && emailField) {
-  emailField.addEventListener('input', () => {
-    replyToField.value = emailField.value.trim();
-  });
-}
-
-if (form && statusMessage && submitButton) {
-  const setFormStatus = (message, type = 'neutral') => {
-    statusMessage.textContent = message;
-    statusMessage.classList.toggle('success', type === 'success');
-    statusMessage.classList.toggle('error', type === 'error');
-  };
+  if (!form) return;
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    const nameValue = form.querySelector('input[name="name"]')?.value.trim() || '';
-    const emailValue = form.querySelector('input[name="email"]')?.value.trim() || '';
-    const messageValue = form.querySelector('textarea[name="message"]')?.value.trim() || '';
+    const submitButton = form.querySelector('button[type="submit"]');
+    const formData = new FormData(form);
+    const payload = {
+      name: formData.get('name')?.toString().trim(),
+      email: formData.get('email')?.toString().trim(),
+      message: formData.get('message')?.toString().trim(),
+    };
 
-    if (!nameValue || !emailValue || !messageValue) {
-      setFormStatus('Please fill out name, email, and message before sending.', 'error');
+    // Keep the hidden reply-to field in sync
+    if (replyToField) replyToField.value = payload.email || '';
+
+    // Basic client-side guard (server still validates too)
+    if (!payload.name || !payload.email || !payload.message) {
+      statusEl.textContent = 'Please fill in all fields.';
+      statusEl.classList.remove('success');
+      statusEl.classList.add('error');
       return;
     }
 
-    if (replyToField) {
-      replyToField.value = emailValue;
-    }
-
-    hideSuccessDetails();
-    setFormStatus('Sending your message...', 'neutral');
     submitButton.disabled = true;
     submitButton.textContent = 'Sending...';
+    statusEl.textContent = 'Sending your message...';
+    statusEl.classList.remove('success', 'error');
 
     try {
-      const response = await fetch(FORM_SUBMIT_ENDPOINT, {
+      const response = await fetch('/api/send-email', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          name: nameValue,
-          email: emailValue,
-          message: messageValue,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
-      const contentType = response.headers.get('content-type') || '';
-      const rawBody = await response.text();
-      let result = null;
-
-      if (contentType.includes('application/json')) {
-        result = JSON.parse(rawBody);
-      }
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        console.error('FormSubmit error status:', response.status, rawBody);
-        const message = result?.message || rawBody || 'Submission failed.';
-        throw new Error(message);
+        throw new Error(data.error || 'Something went wrong. Please try again.');
       }
 
-      if (result && result.success !== 'true' && !result.success) {
-        throw new Error(result.message || 'Submission failed.');
+      statusEl.textContent = 'Message sent! I\'ll get back to you soon.';
+      statusEl.classList.remove('error');
+      statusEl.classList.add('success');
+
+      if (successEl) {
+        successEl.hidden = false;
+        successEl.textContent = `Thanks, ${payload.name} — a confirmation has been sent to ${payload.email}.`;
       }
 
-      setFormStatus('Message sent successfully — thank you for reaching out! I’ll reply soon.', 'success');
-      // Do not display submitted personal details on the page — keep success details hidden for privacy.
-      hideSuccessDetails();
       form.reset();
-    } catch (error) {
-      console.error(error);
-      const message = error instanceof Error ? error.message : 'The message could not be sent right now.';
-      setFormStatus(`${message} Please email me directly at ejosh8650@gmail.com.`, 'error');
+    } catch (err) {
+      console.error('Contact form error:', err);
+      statusEl.textContent = err.message || 'Unable to send your message. Please email directly.';
+      statusEl.classList.remove('success');
+      statusEl.classList.add('error');
     } finally {
       submitButton.disabled = false;
       submitButton.textContent = 'Send Message';
     }
-  });
-}
+   });
+});

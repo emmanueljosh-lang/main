@@ -30,8 +30,8 @@ const experience = [
   {
     id: "01",
     title: "Asian Hospital and Medical Center",
-    org: "Infrastructure and Network",
-    dept: "",
+    org: "",
+    dept: "Infrastructure and Network",
     meta: "500 Hours",
     period: "Sep 2025 — Jan 2026",
     active: false,
@@ -40,9 +40,9 @@ const experience = [
   },
   {
     id: "02",
-    title: "Crew Member",
+    title: "Service Crew Member",
     org: "McDonald's",
-    dept: "Front-of-house operations",
+    dept: "Service Crew and Production Crew",
     meta: "9 months",
     period: "Jun 2023 — Apr 2024",
     active: false,
@@ -223,10 +223,8 @@ export default function EmbeddedSystemsPortfolio() {
             color: TOKENS.text,
           }}
         >
-          Emmanuel Josh
-          <br />
-          Padagdag Dinsay
-          <br />
+          Emmanuel Josh<br />
+          Padagdag Dinsay<br />
           <span style={{ color: TOKENS.phosphor }}>Embedded Systems Engineer</span>
         </h1>
         <p
@@ -306,21 +304,12 @@ export default function EmbeddedSystemsPortfolio() {
           {contact.phone} · {contact.email}
           <br />
           <a
-            href={contact.github}
+            href="https://emmanuel-josh-portfolio.vercel.app"
             target="_blank"
             rel="noreferrer"
             style={{ color: TOKENS.textDim, textDecoration: "none" }}
           >
-            {contact.github.replace("https://", "")}
-          </a>
-          {" · "}
-          <a
-            href={contact.linkedin}
-            target="_blank"
-            rel="noreferrer"
-            style={{ color: TOKENS.textDim, textDecoration: "none" }}
-          >
-            {contact.linkedin.replace("https://", "")}
+            emmanuel-josh-portfolio.vercel.app
           </a>
         </div>
       </div>
