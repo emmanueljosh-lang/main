@@ -139,13 +139,20 @@ export default async function handler(request, response) {
 
   // --- Path 2: FormSubmit fallback (no RESEND_API_KEY, or Resend failed) ---
   try {
+    const shouldNotify = email.toLowerCase() !== RECIPIENT_EMAIL.toLowerCase();
+
+    if (!shouldNotify) {
+      response.status(200).json({ ok: true, message: 'Self-test skipped FormSubmit notification.' });
+      return;
+    }
+
     const fsResponse = await fetch(FORM_SUBMIT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({
         name,
         email,
-        message,
+        message: `${message}\n\nSent at (Philippines time): ${sentAt}`,
         _subject: `Portfolio message from ${name}`,
         _replyto: email,
       }),
