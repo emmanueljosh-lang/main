@@ -45,80 +45,95 @@ export default async function handler(request, response) {
     // even though the actual sending address stays on your verified domain.
     const notifyFrom = `${safeName || 'Portfolio Visitor'} (via Portfolio) <${SENDER_ADDRESS}>`;
 
-    const notifyPromise = resend.emails.send({
-      from: notifyFrom,
-      to: [RECIPIENT_EMAIL],
-      subject: `Portfolio contact from ${name} • ${sentAt}`,
-      replyTo: email, // camelCase — 'reply_to' is silently ignored by the SDK
-      text: `New portfolio contact message\n\nName: ${name}\nEmail: ${email}\nMessage:\n${message}\n\nSent at (Philippines time): ${sentAt}`,
-      html: `<div style="font-family: Inter, system-ui, -apple-system, sans-serif; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
-        <h2 style="font-size: 18px; font-weight: 600; color: #111827; margin-top: 0; margin-bottom: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">
-          New Portfolio Contact Submission
-        </h2>
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 14px;">
-          <thead>
-            <tr style="background-color: #2b4c8c; color: #ffffff; text-align: left;">
-              <th style="padding: 10px 12px; font-weight: 600; border-top-left-radius: 4px; border-bottom-left-radius: 4px;">Name</th>
-              <th style="padding: 10px 12px; font-weight: 600; border-top-right-radius: 4px; border-bottom-right-radius: 4px;">Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr style="border-bottom: 1px solid #e5e7eb;">
-              <td style="padding: 12px; font-weight: 600; color: #4b5563; width: 30%;">name</td>
-              <td style="padding: 12px; color: #111827; white-space: pre-wrap;">${safeHtml(name)}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #e5e7eb;">
-              <td style="padding: 12px; font-weight: 600; color: #4b5563;">email</td>
-              <td style="padding: 12px; color: #111827;"><a href="mailto:${email}" style="color: #2b4c8c; text-decoration: none;">${safeHtml(email)}</a></td>
-            </tr>
-            <tr style="border-bottom: 1px solid #e5e7eb;">
-              <td style="padding: 12px; font-weight: 600; color: #4b5563;">message</td>
-              <td style="padding: 12px; color: #111827; white-space: pre-wrap;">${safeHtml(message)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 12px; font-weight: 600; color: #4b5563;">Sent at (Philippines time)</td>
-              <td style="padding: 12px; color: #111827;">${safeHtml(sentAt)}</td>
-            </tr>
-          </tbody>
-        </table>
-        <div style="font-size: 12px; color: #9ca3af; text-align: center; margin-top: 24px;">
-          Sent from the contact form on your portfolio site.
-        </div>
-      </div>`,
-    });
+    const promises = [];
+    let notifyIndex = -1;
+    let confirmIndex = -1;
 
-    const confirmationPromise = resend.emails.send({
-      from: FROM,
-      to: [email],
-      subject: 'Thank you for contacting Emmanuel',
-      text: `Hi ${name},\n\nThanks for your message. I have received it and will reply as soon as possible.\n\nYour message:\n${message}\n\nSent at (Philippines time): ${sentAt}\n\nBest regards,\n${SENDER_NAME}`,
-      html: `<div style="font-family: Inter, system-ui, sans-serif; color:#111; line-height:1.6;">
-        <h2>Thanks for your message, ${safeHtml(name)}!</h2>
-        <p>Your note has been received and I'll reply as soon as possible.</p>
-        <p><strong>Your message:</strong></p>
-        <p>${safeHtml(message)}</p>
-        <p>Sent at (Philippines time): ${safeHtml(sentAt)}</p>
-        <p>Best regards,<br/>${safeHtml(SENDER_NAME)}</p>
-      </div>`,
-    });
+    // Do not send notification to yourself if you are the one submitting the form (self-testing)
+    const shouldNotify = email.toLowerCase() !== RECIPIENT_EMAIL.toLowerCase();
 
-    const [notifyResult, confirmResult] = await Promise.allSettled([
-      notifyPromise,
-      confirmationPromise,
-    ]);
+    if (shouldNotify) {
+      notifyIndex = promises.length;
+      promises.push(
+        resend.emails.send({
+          from: notifyFrom,
+          to: [RECIPIENT_EMAIL],
+          subject: `Portfolio contact from ${name} • ${sentAt}`,
+          replyTo: email, // camelCase — 'reply_to' is silently ignored by the SDK
+          text: `New portfolio contact message\n\nName: ${name}\nEmail: ${email}\nMessage:\n${message}\n\nSent at (Philippines time): ${sentAt}`,
+          html: `<div style="font-family: Inter, system-ui, -apple-system, sans-serif; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+            <h2 style="font-size: 18px; font-weight: 600; color: #111827; margin-top: 0; margin-bottom: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">
+              New Portfolio Contact Submission
+            </h2>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 14px;">
+              <thead>
+                <tr style="background-color: #2b4c8c; color: #ffffff; text-align: left;">
+                  <th style="padding: 10px 12px; font-weight: 600; border-top-left-radius: 4px; border-bottom-left-radius: 4px;">Name</th>
+                  <th style="padding: 10px 12px; font-weight: 600; border-top-right-radius: 4px; border-bottom-right-radius: 4px;">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                  <td style="padding: 12px; font-weight: 600; color: #4b5563; width: 30%;">name</td>
+                  <td style="padding: 12px; color: #111827; white-space: pre-wrap;">${safeHtml(name)}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                  <td style="padding: 12px; font-weight: 600; color: #4b5563;">email</td>
+                  <td style="padding: 12px; color: #111827;"><a href="mailto:${email}" style="color: #2b4c8c; text-decoration: none;">${safeHtml(email)}</a></td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                  <td style="padding: 12px; font-weight: 600; color: #4b5563;">message</td>
+                  <td style="padding: 12px; color: #111827; white-space: pre-wrap;">${safeHtml(message)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px; font-weight: 600; color: #4b5563;">Sent at (Philippines time)</td>
+                  <td style="padding: 12px; color: #111827;">${safeHtml(sentAt)}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div style="font-size: 12px; color: #9ca3af; text-align: center; margin-top: 24px;">
+              Sent from the contact form on your portfolio site.
+            </div>
+          </div>`,
+        })
+      );
+    }
 
-    if (notifyResult.status === 'fulfilled') {
-      // The message got to you — that's the part that actually matters.
+    confirmIndex = promises.length;
+    promises.push(
+      resend.emails.send({
+        from: FROM,
+        to: [email],
+        subject: 'Thank you for contacting Emmanuel',
+        text: `Hi ${name},\n\nThanks for your message. I have received it and will reply as soon as possible.\n\nYour message:\n${message}\n\nSent at (Philippines time): ${sentAt}\n\nBest regards,\n${SENDER_NAME}`,
+        html: `<div style="font-family: Inter, system-ui, sans-serif; color:#111; line-height:1.6;">
+          <h2>Thanks for your message, ${safeHtml(name)}!</h2>
+          <p>Your note has been received and I'll reply as soon as possible.</p>
+          <p><strong>Your message:</strong></p>
+          <p>${safeHtml(message)}</p>
+          <p>Sent at (Philippines time): ${safeHtml(sentAt)}</p>
+          <p>Best regards,<br/>${safeHtml(SENDER_NAME)}</p>
+        </div>`,
+      })
+    );
+
+    const results = await Promise.allSettled(promises);
+
+    const notifyResult = notifyIndex !== -1 ? results[notifyIndex] : null;
+    const confirmResult = results[confirmIndex];
+
+    // If we sent a notification and it was successful, or if we skipped notification (since it is self-testing) and confirmation succeeded
+    if ((notifyResult && notifyResult.status === 'fulfilled') || (!shouldNotify && confirmResult.status === 'fulfilled')) {
       if (confirmResult.status === 'rejected') {
         console.error('Confirmation email failed:', confirmResult.reason);
-        // Common cause: SENDER_ADDRESS domain not verified in Resend,
-        // so Resend only allows sending to your own account email.
       }
       response.status(200).json({ ok: true, message: 'Message delivered.' });
       return;
     }
 
-    console.error('Resend notify email failed:', notifyResult.reason);
+    if (notifyResult && notifyResult.status === 'rejected') {
+      console.error('Resend notify email failed:', notifyResult.reason);
+    }
     // Fall through to FormSubmit backup below.
   }
 
