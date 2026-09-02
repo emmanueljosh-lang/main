@@ -1,4 +1,39 @@
 /* ──────────────────────────────────────────────
+   Contact channels — single source of truth
+   Mirrors: const NAV_LINKS / const SKILLS pattern below.
+   The phone number lives here ONCE. Every <a data-contact="…">
+   in the HTML is a blank intent slot; applyContactLinks() fills in
+   the correct href for each channel. Change a number here and every
+   tel:/viber: link on the page updates together — this is what
+   caught the earlier bug where the contact-info Viber link had
+   silently drifted to a tel: href while the social-row Viber link
+   correctly used viber://. One source, no drift.
+   ────────────────────────────────────────────── */
+const CONTACT = {
+  // Local dialing format, as written on the page and used for tel:.
+  phoneLocal: '09771688613',
+  // E.164 format (country code, no leading 0) — what Viber's URL
+  // scheme expects. Derived once here rather than hand-encoded
+  // wherever a Viber link happens to appear.
+  phoneE164: '+639771688613',
+};
+
+const CONTACT_HREF_BUILDERS = {
+  tel: () => `tel:${CONTACT.phoneLocal}`,
+  viber: () => `viber://chat?number=${encodeURIComponent(CONTACT.phoneE164)}`,
+};
+
+function applyContactLinks() {
+  document.querySelectorAll('[data-contact]').forEach((link) => {
+    const buildHref = CONTACT_HREF_BUILDERS[link.dataset.contact];
+    if (!buildHref) return; // Unknown channel — leave it alone rather than guess.
+    link.href = buildHref();
+  });
+}
+
+applyContactLinks();
+
+/* ──────────────────────────────────────────────
    Nav data — single source of truth
    Mirrors: const NAV_LINKS = [{ href, label }, …]
    Add a route here — no HTML changes needed.
@@ -235,11 +270,11 @@ document.querySelectorAll('.flip-card').forEach((card) => {
    ────────────────────────────────────────────── */
 
 // ── DOM refs ──
-const form        = document.getElementById('contact-form');
-const statusEl    = document.getElementById('form-status');
-const successEl   = document.getElementById('contact-success');
+const form = document.getElementById('contact-form');
+const statusEl = document.getElementById('form-status');
+const successEl = document.getElementById('contact-success');
 const replyToField = document.getElementById('replyto-field');
-const submitBtn   = form ? form.querySelector('button[type="submit"]') : null;
+const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
 
 // ── Single source of truth ──
 // status: 'idle' | 'loading' | 'success' | 'error'
@@ -272,13 +307,13 @@ function renderForm() {
   const { status, message, payload } = formState;
 
   // ── Submit button state ──
-  submitBtn.disabled    = status === 'loading';
+  submitBtn.disabled = status === 'loading';
   submitBtn.textContent = status === 'loading' ? 'Sending…' : 'Send Message';
 
   // ── Status message ──
   statusEl.textContent = message;
   statusEl.classList.toggle('success', status === 'success');
-  statusEl.classList.toggle('error',   status === 'error');
+  statusEl.classList.toggle('error', status === 'error');
 
   // ── Success detail panel ──
   if (successEl) {
@@ -291,10 +326,10 @@ function renderForm() {
           <dt>Name</dt><dd>${payload.name}</dd>
           <dt>Email</dt><dd>${payload.email}</dd>
           <dt>Sent at</dt><dd>${new Intl.DateTimeFormat('en-PH', {
-            timeZone: 'Asia/Manila',
-            dateStyle: 'medium',
-            timeStyle: 'short',
-          }).format(new Date())}</dd>
+        timeZone: 'Asia/Manila',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(new Date())}</dd>
         </dl>`;
     }
   }
@@ -306,9 +341,9 @@ if (form) {
     event.preventDefault();
 
     const formData = new FormData(form);
-    const payload  = {
-      name:    formData.get('name')?.toString().trim(),
-      email:   formData.get('email')?.toString().trim(),
+    const payload = {
+      name: formData.get('name')?.toString().trim(),
+      email: formData.get('email')?.toString().trim(),
       message: formData.get('message')?.toString().trim(),
     };
 
@@ -326,9 +361,9 @@ if (form) {
 
     try {
       const response = await fetch('/api/send-email', {
-        method:  'POST',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(payload),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json().catch(() => ({}));
@@ -340,7 +375,7 @@ if (form) {
       // Transition → success (functional updater merges payload in)
       setFormState((s) => ({
         ...s,
-        status:  'success',
+        status: 'success',
         message: `Message sent! I'll get back to you soon.`,
         payload,
       }));
@@ -352,7 +387,7 @@ if (form) {
 
       // Transition → error
       setFormState({
-        status:  'error',
+        status: 'error',
         message: err.message || 'Unable to send. Please email directly.',
         payload: null,
       });
