@@ -1,4 +1,16 @@
 /* ──────────────────────────────────────────────
+   Nav data — single source of truth
+   Mirrors: const NAV_LINKS = [{ href, label }, …]
+   Add a route here — no HTML changes needed.
+   ────────────────────────────────────────────── */
+const NAV_LINKS = [
+  { href: '#about', label: 'About' },
+  { href: '#experience', label: 'Experience' },
+  { href: '#projects', label: 'Projects' },
+  { href: '#contact', label: 'Contact' },
+];
+
+/* ──────────────────────────────────────────────
    Global DOM refs & utilities
    ────────────────────────────────────────────── */
 const year = document.getElementById('year');
@@ -6,7 +18,53 @@ const philTimeDisplay = document.getElementById('phil-time');
 const navToggle = document.querySelector('.nav-toggle');
 const siteNav = document.querySelector('.site-nav');
 const navBackdrop = document.querySelector('.nav-backdrop');
+
+/**
+ * renderNavLinks() — injects <li><a> nodes from NAV_LINKS.
+ * Mirrors: NAV_LINKS.map((link) => <li><a href={link.href}>{link.label}</a></li>)
+ * Closing the nav (setNavOpen(false)) is wired after this runs.
+ */
+function renderNavLinks() {
+  if (!siteNav) return;
+  const ul = siteNav.querySelector('ul');
+  if (!ul) return;
+  const fragment = document.createDocumentFragment();
+  NAV_LINKS.forEach(({ href, label }) => {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.className = 'nav-link';
+    a.href = href;
+    a.textContent = label;
+    li.appendChild(a);
+    fragment.appendChild(li);
+  });
+  ul.appendChild(fragment);
+}
+
+renderNavLinks();
+
+/**
+ * renderNavToggle() — injects the 3 hamburger bar <span>s into the empty button.
+ * The CSS already handles the bars → X animation via aria-expanded.
+ * Mirrors: <button> { <span /><span /><span /> } rendered by the component.
+ */
+function renderNavToggle() {
+  if (!navToggle) return;
+  for (let i = 0; i < 3; i++) {
+    const bar = document.createElement('span');
+    bar.setAttribute('aria-hidden', 'true');
+    navToggle.appendChild(bar);
+  }
+}
+
+renderNavToggle();
+
+// Derive navLinks AFTER rendering so it captures the JS-created anchors
 const navLinks = siteNav ? siteNav.querySelectorAll('a') : [];
+
+// ── Nav state (single source of truth — mirrors React useState) ──
+let navOpen = false;
+
 let lastFocused = null;
 
 if (year) {
@@ -47,7 +105,8 @@ interactiveElements.forEach((element) => {
 });
 
 /* ──────────────────────────────────────────────
-   Mobile navigation
+   Mobile navigation — state-driven (senior pattern)
+   Mirrors: const [navOpen, setNavOpen] = useState(false)
    ────────────────────────────────────────────── */
 function handleNavKeydown(event) {
   if (event.key === 'Escape') {
@@ -70,44 +129,87 @@ function handleNavKeydown(event) {
   }
 }
 
-function setNavOpen(open) {
-  if (!navToggle || !siteNav) {
-    return;
-  }
+/**
+ * setNavOpen(next) — declarative state setter.
+ * Accepts a boolean OR a functional updater: (prevState) => newState.
+ * Mirrors: const [navOpen, setNavOpen] = useState(false)
+ *   - setNavOpen(false)         plain boolean
+ *   - setNavOpen((o) => !o)     functional updater — always uses latest state
+ */
+function setNavOpen(next) {
+  if (!navToggle || !siteNav) return;
 
-  navToggle.setAttribute('aria-expanded', String(open));
-  siteNav.setAttribute('data-open', String(open));
-  navBackdrop?.setAttribute('data-open', String(open));
-  document.body.classList.toggle('nav-open', open);
-  document.body.style.overflow = open ? 'hidden' : '';
+  // Resolve next state — functional updater or plain boolean
+  navOpen = typeof next === 'function' ? next(navOpen) : next;
 
-  if (open) {
+  // Sync DOM to state (like a render() call)
+  navToggle.setAttribute('aria-expanded', String(navOpen));
+  siteNav.setAttribute('data-open', String(navOpen));
+  if (navBackdrop) navBackdrop.setAttribute('data-open', String(navOpen));
+  document.body.classList.toggle('nav-open', navOpen);
+  document.body.style.overflow = navOpen ? 'hidden' : '';
+
+  if (navOpen) {
     lastFocused = document.activeElement;
     navLinks[0]?.focus();
     document.addEventListener('keydown', handleNavKeydown);
   } else {
     document.removeEventListener('keydown', handleNavKeydown);
-    if (lastFocused) {
-      lastFocused.focus();
-    }
+    lastFocused?.focus();
   }
 }
 
 if (navToggle && siteNav) {
-  navToggle.addEventListener('click', () => {
-    const isOpen = navToggle.getAttribute('aria-expanded') === 'true';
-    setNavOpen(!isOpen);
-  });
+  // Functional updater: (o) => !o — always derives from latest state
+  // Mirrors: onClick={() => setNavOpen((o) => !o)}
+  navToggle.addEventListener('click', () => setNavOpen((o) => !o));
 
-  navBackdrop?.addEventListener('click', () => setNavOpen(false));
+  // Nav links close the menu (mirrors onClick={() => setNavOpen(false)})
   navLinks.forEach((link) => link.addEventListener('click', () => setNavOpen(false)));
 
-  window.matchMedia('(min-width:721px)').addEventListener('change', (event) => {
-    if (event.matches && navToggle.getAttribute('aria-expanded') === 'true') {
-      setNavOpen(false);
-    }
+  // Backdrop click closes the menu
+  navBackdrop?.addEventListener('click', () => setNavOpen(false));
+
+  // Auto-close when viewport expands past the mobile breakpoint (matches 780px CSS rule)
+  window.matchMedia('(min-width: 781px)').addEventListener('change', (event) => {
+    if (event.matches && navOpen) setNavOpen(false);
   });
 }
+
+/* ──────────────────────────────────────────────
+   Skills — declarative data array
+   Mirrors: SKILLS.map((s) => <div className="card">…</div>)
+   Add / edit a skill here — no HTML changes needed.
+   ────────────────────────────────────────────── */
+const SKILLS = [
+  { title: 'Embedded & IoT', items: 'Arduino, ESP8266, RFID, sensors, Blynk, IoT systems' },
+  { title: 'Networking', items: 'Packet Tracer, IP addressing, Basic Network Configuration' },
+  { title: 'Development', items: 'Python, C++, JavaScript, PHP, Flutter, HTML, CSS, Node.js, React' },
+  { title: 'Data & Cloud', items: 'Supabase, Vercel, Firebase, MySQL, Power BI, Excel, Pandas' },
+  { title: 'Workflow', items: 'Git, GitHub, API integration, debugging, testing, prompt engineering' },
+  { title: 'AI & Productivity', items: 'ChatGPT, Claude, AI-assisted automation, prompt engineering, GitHub Copilot' },
+  { title: 'UI/UX & Design', items: 'Dribble, UI/UX Design, responsive design' },
+  { title: 'Hardware & Technical Support', items: 'PC Building, Computer Assembly, Hardware Troubleshooting, OS Installation' },
+];
+
+function renderSkills() {
+  const grid = document.getElementById('skills-grid');
+  if (!grid) return;
+
+  // Build fragment first — single DOM write (no layout thrashing)
+  const fragment = document.createDocumentFragment();
+
+  SKILLS.forEach((skill) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<h3>${skill.title}</h3><p>${skill.items}</p>`;
+    fragment.appendChild(card);
+  });
+
+  grid.appendChild(fragment);
+}
+
+renderSkills();
 
 /* ──────────────────────────────────────────────
    Flip cards (touch devices)
@@ -197,5 +299,5 @@ document.addEventListener('DOMContentLoaded', () => {
       submitButton.disabled = false;
       submitButton.textContent = 'Send Message';
     }
-   });
+  });
 });

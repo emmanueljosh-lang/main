@@ -20,24 +20,13 @@
   <div class="nav-backdrop" aria-hidden="true"></div>
 
   <header class="site-header">
-    <a class="brand" href="#home">&lt;<span>EJPD</span>/&gt;</a>
-
+    <!-- Button bars rendered by renderNavToggle() in script.js -->
     <button class="nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false"
-      aria-controls="primary-nav">
-      <span aria-hidden="true"></span>
-      <span aria-hidden="true"></span>
-      <span aria-hidden="true"></span>
-    </button>
+      aria-controls="primary-nav"></button>
 
-    <div class="nav-backdrop" data-open="false" aria-hidden="true"></div>
-
-    <nav id="primary-nav" class="site-nav nav" aria-label="Primary navigation" data-open="false">
-      <ul class="nav justify-content-center">
-        <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
-        <li class="nav-item"><a class="nav-link" href="#experience">Experience</a></li>
-        <li class="nav-item"><a class="nav-link" href="#projects">Projects</a></li>
-        <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
-      </ul>
+    <!-- Links rendered by NAV_LINKS array in script.js -->
+    <nav id="primary-nav" class="site-nav" aria-label="Primary navigation" data-open="false">
+      <ul></ul>
     </nav>
   </header>
 
@@ -63,7 +52,7 @@
             <span>Infrastructure and Network Internship</span>
           </li>
           <li>
-            <strong>3+</strong>
+            <strong>30+</strong>
             <span>modern tech stacks</span>
           </li>
         </ul>
@@ -76,7 +65,7 @@
         <div class="chip-row">
           <span>ESP8266</span>
           <span>IoT</span>
-          <span>Mobile App</span>
+          <span>Blynk IoT App</span>
           <span>RFID</span>
         </div>
         <div class="mini-output">
@@ -135,8 +124,8 @@
         <article class="timeline-item">
           <div class="timeline-dot"></div>
           <div class="timeline-content card">
-            <h3>McDonald’s Crew Member</h3>
-            <p class="meta">June 2023 – April 2024 • 9 months</p>
+            <h3>McDonald’s Service Crew Member</h3>
+            <p class="meta">June 2023 – April 2024</p>
             <p>
               Strengthened my communication, teamwork, time management, and customer service skills in a fast-paced
               environment while maintaining focus under pressure.
@@ -162,28 +151,8 @@
         <p class="eyebrow">Skills</p>
         <h2>Tools and technologies I confidently work with.</h2>
       </div>
-      <div class="skills-grid">
-        <div class="card">
-          <h3>Embedded & IoT</h3>
-          <p>Arduino, ESP8266, RFID, sensors, Blynk, IoT systems</p>
-        </div>
-        <div class="card">
-          <h3>Development</h3>
-          <p>Python, C++, JavaScript, PHP, Flutter, HTML, CSS</p>
-        </div>
-        <div class="card">
-          <h3>Data & Cloud</h3>
-          <p>Supabase, Vercel, Firebase, MySQL, Power BI, Excel, Pandas</p>
-        </div>
-        <div class="card">
-          <h3>Workflow</h3>
-          <p>Git, GitHub, API integration, debugging, testing, prompt engineering</p>
-        </div>
-        <div class="card">
-          <h3>AI & Productivity Tools</h3>
-          <p>ChatGPT, Claude, AI-assisted automation, prompt engineering, GitHub Copilot</p>
-        </div>
-      </div>
+      <!-- Cards rendered by SKILLS array in script.js -->
+      <div id="skills-grid" class="skills-grid"></div>
     </section>
 
     <section id="projects" class="section">
@@ -345,17 +314,14 @@
           <div class="contact-info">
             <p>Email: <a href="mailto:ejosh8650@gmail.com">ejosh8650@gmail.com</a></p>
             <p>Phone: <a href="tel:09771688613">0977 168 8613</a></p>
-            <p>Location: Muntinlupa City</p>
+            <p>Viber: <a href="tel:09771688613">0977 168 8613</a></p>
+            <p>Location: Putatan, Muntinlupa City</p>
             <p id="phil-time" class="phil-time">Current time in the Philippines: --</p>
           </div>
-          <ul class="contact-features">
-            <li>Secure Resend email delivery</li>
-            <li>Professional reply within 24 hours</li>
-            <li>Project-friendly brief or roadmap requests</li>
-          </ul>
           <div class="social-links">
             <a href="https://www.facebook.com/ej.dinsayy" target="_blank" rel="noreferrer">Facebook</a>
             <a href="https://www.instagram.com/josh__notfound/" target="_blank" rel="noreferrer">Instagram</a>
+            <a href="viber://chat?number=%2B639771688613" rel="noreferrer">Viber</a>
           </div>
         </div>
         <form id="contact-form" class="card form-card" action="/api/send-email" method="POST">
@@ -376,15 +342,14 @@
           <p id="form-status" class="form-status" aria-live="polite"></p>
           <div id="contact-success" class="form-success-details" hidden aria-live="polite"></div>
           <p class="form-help">Your message will be sent securely and you'll receive a confirmation email once delivery
-            is
-            complete.</p>
+            is complete.</p>
         </form>
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <p>© <span id="year"></span> Emmanuel Josh Dinsay. Built as a modern resume portfolio.</p>
+    <p>© Emmanuel Josh Padagdag Dinsay. Built as a modern resume portfolio.</p>
   </footer>
 
   <script src="script.js"></script>
