@@ -6,7 +6,8 @@
   "description": "Modern resume portfolio for Emmanuel Josh Dinsay",
   "scripts": {
     "dev": "node dev-server.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build": "vite build"
   },
   "dependencies": {
     "bootstrap": "^5.3.8",
