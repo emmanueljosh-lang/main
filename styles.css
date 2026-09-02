@@ -101,13 +101,7 @@ main,
 .site-header {
   position: sticky;
   top: 0;
-  /* Must outrank .nav-backdrop's z-index (190): the header is the
-     stacking-context root for the toggle button and the drawer, so
-     their nested z-indexes (200/210) only matter *inside* the header.
-     If the header itself sat below the backdrop, the open drawer and
-     its links would render underneath the dimmed overlay and be
-     untappable on mobile. */
-  z-index: 250;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -144,20 +138,16 @@ main,
 .site-nav {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex: 1;
 }
 
 .site-nav ul {
   display: flex;
   gap: 0.45rem;
   align-items: center;
-  justify-content: center;
   list-style: none;
   margin: 0;
   padding: 0;
   flex-wrap: wrap;
-  width: 100%;
 }
 
 .nav {
@@ -235,7 +225,6 @@ main,
   display: none;
   position: relative;
   z-index: 210;
-  flex-shrink: 0;
   width: 44px;
   height: 44px;
   padding: 0;
@@ -1035,7 +1024,6 @@ textarea:user-invalid {
     padding: 1rem 1.5rem 1.4rem;
     gap: 0.25rem;
     width: 100%;
-    align-items: stretch;
   }
 
   .site-nav li {
@@ -1045,7 +1033,6 @@ textarea:user-invalid {
   .site-nav a,
   .nav-link {
     display: flex;
-    justify-content: center;
     width: 100%;
     padding: 0.75rem 1rem;
     border-radius: 10px;
