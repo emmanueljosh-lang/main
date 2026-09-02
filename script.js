@@ -224,7 +224,7 @@ const SKILLS = [
   { title: 'Workflow', items: 'Git, GitHub, API integration, debugging, testing, prompt engineering' },
   { title: 'AI & Productivity', items: 'ChatGPT, Claude, AI-assisted automation, prompt engineering, GitHub Copilot' },
   { title: 'UI/UX & Design', items: 'Dribble, UI/UX Design, responsive design' },
-  { title: 'Hardware & Technical Support', items: 'PC Building, Computer Assembly, Hardware Troubleshooting, OS Installation' },
+  { title: 'Hardware & Technical Support', items: 'PC Building, Computer Assembly, Hardware Troubleshooting, OS InstallationPC Building, PC Assembly, Computer Hardware Installation, Hardware Troubleshooting, PC Diagnostics, OS Installation' },
 ];
 
 function renderSkills() {
