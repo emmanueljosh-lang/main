@@ -1,4 +1,39 @@
 /* ──────────────────────────────────────────────
+   Contact channels — single source of truth
+   Mirrors: const NAV_LINKS / const SKILLS pattern below.
+   The phone number lives here ONCE. Every <a data-contact="…">
+   in the HTML is a blank intent slot; applyContactLinks() fills in
+   the correct href for each channel. Change a number here and every
+   tel:/viber: link on the page updates together — this is what
+   caught the earlier bug where the contact-info Viber link had
+   silently drifted to a tel: href while the social-row Viber link
+   correctly used viber://. One source, no drift.
+   ────────────────────────────────────────────── */
+const CONTACT = {
+  // Local dialing format, as written on the page and used for tel:.
+  phoneLocal: '09771688613',
+  // E.164 format (country code, no leading 0) — what Viber's URL
+  // scheme expects. Derived once here rather than hand-encoded
+  // wherever a Viber link happens to appear.
+  phoneE164: '+639771688613',
+};
+
+const CONTACT_HREF_BUILDERS = {
+  tel: () => `tel:${CONTACT.phoneLocal}`,
+  viber: () => `viber://chat?number=${encodeURIComponent(CONTACT.phoneE164)}`,
+};
+
+function applyContactLinks() {
+  document.querySelectorAll('[data-contact]').forEach((link) => {
+    const buildHref = CONTACT_HREF_BUILDERS[link.dataset.contact];
+    if (!buildHref) return; // Unknown channel — leave it alone rather than guess.
+    link.href = buildHref();
+  });
+}
+
+applyContactLinks();
+
+/* ──────────────────────────────────────────────
    Nav data — single source of truth
    Mirrors: const NAV_LINKS = [{ href, label }, …]
    Add a route here — no HTML changes needed.
@@ -183,11 +218,13 @@ if (navToggle && siteNav) {
    ────────────────────────────────────────────── */
 const SKILLS = [
   { title: 'Embedded & IoT', items: 'Arduino, ESP8266, RFID, sensors, Blynk, IoT systems' },
-  { title: 'Networking', items: 'Packet Tracer, IP addressing' },
-  { title: 'Development', items: 'Python, C++, JavaScript, PHP, Flutter, HTML, CSS' },
+  { title: 'Networking', items: 'Packet Tracer, IP addressing, Basic Network Configuration' },
+  { title: 'Development', items: 'Python, C++, JavaScript, PHP, Flutter, HTML, CSS, Node.js, React' },
   { title: 'Data & Cloud', items: 'Supabase, Vercel, Firebase, MySQL, Power BI, Excel, Pandas' },
   { title: 'Workflow', items: 'Git, GitHub, API integration, debugging, testing, prompt engineering' },
   { title: 'AI & Productivity', items: 'ChatGPT, Claude, AI-assisted automation, prompt engineering, GitHub Copilot' },
+  { title: 'UI/UX & Design', items: 'Dribble, UI/UX Design, responsive design' },
+  { title: 'Hardware & Technical Support', items: 'PC Building, Computer Assembly, Hardware Troubleshooting, OS Installation' },
 ];
 
 function renderSkills() {
@@ -228,20 +265,81 @@ document.querySelectorAll('.flip-card').forEach((card) => {
 });
 
 /* ──────────────────────────────────────────────
-   Contact form — Resend API via /api/send-email
+   Contact form — state-driven (senior pattern)
+   Mirrors: const [formState, setFormState] = useState({ status, message, payload })
    ────────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('contact-form');
-  const statusEl = document.getElementById('form-status');
-  const successEl = document.getElementById('contact-success');
-  const replyToField = document.getElementById('replyto-field');
 
-  if (!form) return;
+// ── DOM refs ──
+const form = document.getElementById('contact-form');
+const statusEl = document.getElementById('form-status');
+const successEl = document.getElementById('contact-success');
+const replyToField = document.getElementById('replyto-field');
+const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
 
+// ── Single source of truth ──
+// status: 'idle' | 'loading' | 'success' | 'error'
+let formState = { status: 'idle', message: '', payload: null };
+
+/**
+ * setFormState(next) — declarative state setter.
+ * Accepts a plain object OR a functional updater: (prev) => newState.
+ * Mirrors: const [formState, setFormState] = useState({ status: 'idle' })
+ *   - setFormState({ status: 'loading' })          plain object (merged)
+ *   - setFormState((s) => ({ ...s, message: '' })) functional updater
+ */
+function setFormState(next) {
+  // Resolve next state — functional updater or plain object (shallow merge)
+  formState = typeof next === 'function'
+    ? next(formState)
+    : { ...formState, ...next };
+
+  renderForm();  // Sync DOM to state (like a render() call)
+}
+
+/**
+ * renderForm() — pure DOM sync driven by formState.
+ * Never mutate DOM outside this function.
+ * Mirrors: useEffect(() => { … }, [formState])
+ */
+function renderForm() {
+  if (!form || !statusEl || !submitBtn) return;
+
+  const { status, message, payload } = formState;
+
+  // ── Submit button state ──
+  submitBtn.disabled = status === 'loading';
+  submitBtn.textContent = status === 'loading' ? 'Sending…' : 'Send Message';
+
+  // ── Status message ──
+  statusEl.textContent = message;
+  statusEl.classList.toggle('success', status === 'success');
+  statusEl.classList.toggle('error', status === 'error');
+
+  // ── Success detail panel ──
+  if (successEl) {
+    const show = status === 'success' && Boolean(payload);
+    successEl.hidden = !show;
+    if (show) {
+      successEl.innerHTML = `
+        <p class="success-heading">✓ Message delivered</p>
+        <dl>
+          <dt>Name</dt><dd>${payload.name}</dd>
+          <dt>Email</dt><dd>${payload.email}</dd>
+          <dt>Sent at</dt><dd>${new Intl.DateTimeFormat('en-PH', {
+        timeZone: 'Asia/Manila',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(new Date())}</dd>
+        </dl>`;
+    }
+  }
+}
+
+// ── Wire submit event ──
+if (form) {
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    const submitButton = form.querySelector('button[type="submit"]');
     const formData = new FormData(form);
     const payload = {
       name: formData.get('name')?.toString().trim(),
@@ -249,21 +347,17 @@ document.addEventListener('DOMContentLoaded', () => {
       message: formData.get('message')?.toString().trim(),
     };
 
-    // Keep the hidden reply-to field in sync
+    // Keep hidden reply-to field in sync
     if (replyToField) replyToField.value = payload.email || '';
 
-    // Basic client-side guard (server still validates too)
+    // Client-side guard — server validates too
     if (!payload.name || !payload.email || !payload.message) {
-      statusEl.textContent = 'Please fill in all fields.';
-      statusEl.classList.remove('success');
-      statusEl.classList.add('error');
+      setFormState({ status: 'error', message: 'Please fill in all fields.' });
       return;
     }
 
-    submitButton.disabled = true;
-    submitButton.textContent = 'Sending...';
-    statusEl.textContent = 'Sending your message...';
-    statusEl.classList.remove('success', 'error');
+    // Transition → loading
+    setFormState({ status: 'loading', message: 'Sending your message…', payload: null });
 
     try {
       const response = await fetch('/api/send-email', {
@@ -278,24 +372,28 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(data.error || 'Something went wrong. Please try again.');
       }
 
-      statusEl.textContent = 'Message sent! I\'ll get back to you soon.';
-      statusEl.classList.remove('error');
-      statusEl.classList.add('success');
-
-      if (successEl) {
-        successEl.hidden = false;
-        successEl.textContent = `Thanks, ${payload.name} — a confirmation has been sent to ${payload.email}.`;
-      }
+      // Transition → success (functional updater merges payload in)
+      setFormState((s) => ({
+        ...s,
+        status: 'success',
+        message: `Message sent! I'll get back to you soon.`,
+        payload,
+      }));
 
       form.reset();
+
     } catch (err) {
       console.error('Contact form error:', err);
-      statusEl.textContent = err.message || 'Unable to send your message. Please email directly.';
-      statusEl.classList.remove('success');
-      statusEl.classList.add('error');
-    } finally {
-      submitButton.disabled = false;
-      submitButton.textContent = 'Send Message';
+
+      // Transition → error
+      setFormState({
+        status: 'error',
+        message: err.message || 'Unable to send. Please email directly.',
+        payload: null,
+      });
     }
   });
-});
+}
+
+// Initialise DOM to match default idle state
+renderForm();
