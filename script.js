@@ -219,7 +219,7 @@ if (navToggle && siteNav) {
 const SKILLS = [
   { title: 'Embedded & IoT', items: 'Arduino, ESP8266, RFID, sensors, Blynk, IoT systems' },
   { title: 'Networking', items: 'Packet Tracer, IP addressing, Basic Network Configuration' },
-  { title: 'Development', items: 'Python, C++, JavaScript, PHP, Flutter, HTML, CSS, Node.js, React' },
+  { title: 'Development', items: 'Python, C++, JavaScript, PHP, Flutter, HTML, CSS, Node.js, React.js' },
   { title: 'Data & Cloud', items: 'Supabase, Vercel, Firebase, MySQL, Power BI, Excel, Pandas' },
   { title: 'Workflow', items: 'Git, GitHub, API integration, debugging, testing, prompt engineering' },
   { title: 'AI & Productivity', items: 'ChatGPT, Claude, AI-assisted automation, prompt engineering, GitHub Copilot' },
